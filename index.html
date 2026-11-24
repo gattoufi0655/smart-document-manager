@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Document Manager — Workflow</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#cbd5e1;--blue:#2563eb;--cyan:#0891b2;--violet:#7c3aed;--green:#15803d;--orange:#c2410c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:36px 20px 56px}
+header{margin-bottom:26px}h1{font-size:clamp(2rem,5vw,3rem);line-height:1.1;margin:0 0 10px}header p{color:var(--muted);max-width:760px;margin:0}
+.pill{display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:5px 12px;font-size:.82rem;font-weight:700;margin-bottom:14px}
+.diagram{background:var(--card);border:1px solid #e2e8f0;border-radius:20px;padding:22px;box-shadow:0 12px 32px #0f172a0a;overflow:hidden}
+.flow{display:grid;grid-template-columns:1fr;justify-items:center;gap:10px}
+.node{width:min(100%,440px);border:1.5px solid #cbd5e1;background:#fff;border-radius:13px;padding:13px 16px;text-align:center;box-shadow:0 3px 10px #0f172a08}
+.node strong{display:block;font-size:1rem}.node small{display:block;color:var(--muted);margin-top:3px}
+.trigger{border-color:#93c5fd;background:#eff6ff}.read{border-color:#7dd3fc;background:#ecfeff}.switch{border-color:#c4b5fd;background:#f5f3ff}
+.arrow{color:#94a3b8;font-size:23px;line-height:1}
+.branch-label{font-size:.8rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:3px 0}
+.branches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%;align-items:start}
+.branch{border:1px solid #e2e8f0;border-radius:16px;padding:15px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
+.branch h2{font-size:1rem;margin:0}.branch .node{width:100%;padding:12px 10px}
+.txt .node{border-color:#86efac;background:#f0fdf4}.pdf .node{border-color:#fcd34d;background:#fffbeb}.docx .node{border-color:#fdba74;background:#fff7ed}
+.arrow.small{font-size:19px}
+.status{font-size:.78rem;font-weight:700;padding:4px 9px;border-radius:999px;background:#dcfce7;color:#166534}
+.pending{background:#fef3c7;color:#92400e}
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.note{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}
+.note h3{font-size:.95rem;margin:0 0 7px}.note p{margin:0;color:var(--muted);font-size:.9rem}
+footer{color:var(--muted);font-size:.82rem;margin-top:22px}
+@media(max-width:760px){.branches,.notes{grid-template-columns:1fr}.branch{width:100%}.diagram{padding:14px}main{padding:26px 14px 40px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <span class="pill">Documentation du workflow n8n</span>
+  <h1>Smart Document Manager</h1>
+  <p>Présentation en lecture seule du workflow qui lit les documents déposés dans un dossier d'entrée, identifie leur format et dirige chaque fichier vers la branche de traitement correspondante.</p>
+</header>
+<section class="diagram" aria-label="Schéma du workflow">
+  <div class="flow">
+    <div class="node trigger"><strong>Déclencheur manuel</strong><small>When clicking “Execute workflow”</small></div>
+    <div class="arrow">↓</div>
+    <div class="node read"><strong>Lecture des fichiers</strong><small>Read/Write Files from Disk · récupère les fichiers du dossier d'entrée</small></div>
+    <div class="arrow">↓</div>
+    <div class="node switch"><strong>Switch — identification du format</strong><small>Vérifie l'extension du fichier : TXT, PDF ou DOCX</small></div>
+    <div class="arrow">↓</div>
+    <div class="branch-label">Trois branches selon le format</div>
+    <div class="branches">
+      <article class="branch txt">
+        <h2>Branche TXT</h2>
+        <div class="node"><strong>Extract from File</strong><small>Extraction du texte</small></div>
+        <div class="arrow small">↓</div>
+        <div class="node"><strong>Convert to File</strong><small>Conversion en fichier texte UTF-8</small></div>
+        <div class="arrow small">↓</div>
+        <div class="node"><strong>Read/Write Files from Disk</strong><small>Écriture dans le dossier de sortie</small></div>
+        <span class="status">Écriture configurée</span>
+      </article>
+      <article class="branch pdf">
+        <h2>Branche PDF</h2>
+        <div class="node"><strong>Extract from File</strong><small>Extraction du contenu du PDF</small></div>
+        <div class="arrow small">↓</div>
+        <div class="node"><strong>Fin de la branche actuelle</strong><small>Aucun nœud d'enregistrement relié dans cet export</small></div>
+        <span class="status pending">Enregistrement à compléter</span>
+      </article>
+      <article class="branch docx">
+        <h2>Branche DOCX</h2>
+        <div class="node"><strong>HTTP Request</strong><small>Envoie le document au service Python Flask local</small></div>
+        <div class="arrow small">↓</div>
+        <div class="node"><strong>Fin de la branche actuelle</strong><small>La réponse extraite n'est pas reliée à un nœud d'enregistrement</small></div>
+        <span class="status pending">Enregistrement à compléter</span>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="notes">
+  <article class="note"><h3>Formats pris en charge</h3><p>TXT, PDF et DOCX sont séparés par le nœud Switch en fonction de leur extension.</p></article>
+  <article class="note"><h3>État de l'export</h3><p>Cette page représente les 8 nœuds et les connexions présentes dans l'export JSON fourni.</p></article>
+  <article class="note"><h3>À savoir</h3><p>Le workflow utilise actuellement des chemins locaux et un service Flask sur la machine qui l'exécute. Cette page ne déclenche pas le workflow et n'accède à aucun fichier.</p></article>
+</section>
+<footer>Smart Document Manager · Schéma descriptif statique · Aucun accès à l'instance n8n n'est requis pour consulter cette page.</footer>
+</main>
+</body>
+</html>
